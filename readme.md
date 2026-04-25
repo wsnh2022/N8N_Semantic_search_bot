@@ -1,3 +1,5 @@
+![cover](cover.png)
+
 # 🧠 Telegram Semantic Memory Bot (NO LLM)
 
 > **Store anything. Find it by meaning - not keywords.**  
