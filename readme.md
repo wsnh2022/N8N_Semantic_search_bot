@@ -58,7 +58,7 @@ Telegram Message
 
 ## ✨ Key Features
 
-- 🤖 **No LLM required** — pure vector similarity search, zero generative AI costs
+- 🤖 **No LLM required** - pure vector similarity search, zero generative AI costs
 - 🔐 **Auth gate** - only your Telegram ID can access it
 - 📥 **Semantic storage** - text embedded to 3072-dim vectors via Gemini
 - 🔍 **Meaning-based search** - finds closest match even with different wording
