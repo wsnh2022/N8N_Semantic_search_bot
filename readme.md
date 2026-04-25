@@ -1,28 +1,24 @@
 # 🧠 Telegram Semantic Memory Bot
 
-> **Store anything. Find it by meaning — not keywords.**  
+> **Store anything. Find it by meaning - not keywords.**  
 > A self-hosted Telegram bot powered by Gemini embeddings + Qdrant vector search, orchestrated with n8n.
 
-[![n8n](https://img.shields.io/badge/built%20with-n8n-orange?style=flat-square)](https://n8n.io)
-[![Qdrant](https://img.shields.io/badge/vector%20db-Qdrant-6C63FF?style=flat-square)](https://qdrant.tech)
-[![Gemini](https://img.shields.io/badge/embeddings-Gemini%20001-4285F4?style=flat-square)](https://aistudio.google.com)
-[![Telegram](https://img.shields.io/badge/interface-Telegram-2CA5E0?style=flat-square)](https://core.telegram.org/bots)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![n8n](https://img.shields.io/badge/built%20with-n8n-orange?style=flat-square)](https://n8n.io) [![Qdrant](https://img.shields.io/badge/vector%20db-Qdrant-6C63FF?style=flat-square)](https://qdrant.tech) [![Gemini](https://img.shields.io/badge/embeddings-Gemini%20001-4285F4?style=flat-square)](https://aistudio.google.com) [![Telegram](https://img.shields.io/badge/interface-Telegram-2CA5E0?style=flat-square)](https://core.telegram.org/bots) [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
 ---
 
 ## 📌 What Is This?
 
 A minimal but powerful **semantic memory bot** that lives inside Telegram.  
-You `/store` text into a vector database and query it back in natural language — no exact keyword needed.
+You `/store` text into a vector database and query it back in natural language - no exact keyword needed.
 
-No LLM generates the response. It's pure **vector similarity search** — fast, private, and fully self-hosted.
+No LLM generates the response. It's pure **vector similarity search** - fast, private, and fully self-hosted.
 
 ---
 
 ## 🧩 Workflow Architecture
 
-![Workflow](N8N_Semantic_bot_workflow.png)
+![Workflow](N8N_Semantic_search_bot_workflow.png)
 
 ```
 Telegram Message
@@ -62,12 +58,13 @@ Telegram Message
 
 ## ✨ Key Features
 
-- 🔐 **Auth gate** — only your Telegram ID can access it
-- 📥 **Semantic storage** — text embedded to 3072-dim vectors via Gemini
-- 🔍 **Meaning-based search** — finds closest match even with different wording
-- 💬 **Simple Telegram commands** — no UI, no app, just chat
-- 🏠 **Self-hosted** — your data stays in your Qdrant cluster
-- ⚡ **One-click import** — ready-to-use `.json` workflow for n8n
+- 🤖 **No LLM required** — pure vector similarity search, zero generative AI costs
+- 🔐 **Auth gate** - only your Telegram ID can access it
+- 📥 **Semantic storage** - text embedded to 3072-dim vectors via Gemini
+- 🔍 **Meaning-based search** - finds closest match even with different wording
+- 💬 **Simple Telegram commands** - no UI, no app, just chat
+- 🏠 **Self-hosted** - your data stays in your Qdrant cluster
+- ⚡ **One-click import** - ready-to-use `.json` workflow for n8n
 
 ---
 
@@ -93,14 +90,14 @@ Telegram Message
 
 ---
 
-### Step 1 — Create Your Telegram Bot
+### Step 1 - Create Your Telegram Bot
 1. Open Telegram → search `@BotFather`
 2. Send `/newbot` and follow the prompts
 3. Copy the token: `123456789:AABBCCDDaabbccdd...`
 
 ---
 
-### Step 2 — Set Up Qdrant Collection
+### Step 2 - Set Up Qdrant Collection
 1. Go to [cloud.qdrant.io](https://cloud.qdrant.io) → create a free cluster
 2. Copy your **cluster URL** and **API key**
 3. Create a collection named `documents`:
@@ -119,15 +116,15 @@ curl -X PUT "https://YOUR_CLUSTER:6333/collections/documents" \
 
 ---
 
-### Step 3 — Import Workflow into n8n
+### Step 3 - Import Workflow into n8n
 1. Open your n8n instance
 2. Click **Import from file**
 3. Upload `telegram_semantic_bot.json` from this repo
-4. The full workflow loads instantly — all nodes pre-configured
+4. The full workflow loads instantly - all nodes pre-configured
 
 ---
 
-### Step 4 — Configure Credentials
+### Step 4 - Configure Credentials
 In n8n, update the following:
 
 | Node | What to Set |
@@ -141,7 +138,7 @@ In n8n, update the following:
 
 ---
 
-### Step 5 — Activate & Test
+### Step 5 - Activate & Test
 1. Toggle the workflow to **Active** in n8n
 2. Open your bot on Telegram
 3. Try these commands:
@@ -165,17 +162,17 @@ The Eiffel Tower is in Paris, built in 1889
 | Command | Action |
 |---|---|
 | `/store <text>` | Embeds and saves text to Qdrant |
-| Any other message | Semantic search — returns best matching entry |
+| Any other message | Semantic search - returns best matching entry |
 
 ---
 
 ## ⚠️ Known Limitations
 
-- Returns raw stored text — no LLM-generated summarization
+- Returns raw stored text - no LLM-generated summarization
 - Single authorized user by default (hardcoded user ID)
-- No duplicate detection — same text stored twice = two points
+- No duplicate detection - same text stored twice = two points
 - `Date.now()` IDs (fine for personal use, not for high concurrency)
-- `score_threshold: 0.5` — lower to `0.3` if queries return empty on vague input
+- `score_threshold: 0.5` - lower to `0.3` if queries return empty on vague input
 
 ---
 
@@ -184,14 +181,14 @@ The Eiffel Tower is in Paris, built in 1889
 | Version | Planned Features |
 |---|---|
 | **v1 (current)** | Text store + semantic search via Telegram |
-| **v2** | Multi-format ingestion — PDF, DOCX, TXT, `.md` with chunking + BM25 hybrid search |
+| **v2** | Multi-format ingestion - PDF, DOCX, TXT, `.md` with chunking + BM25 hybrid search |
 | **v3** | Multi-user support + web dashboard |
 
 ---
 
 ## 📄 License
 
-MIT — use it, fork it, build on it.
+MIT - use it, fork it, build on it.
 
 ---
 
