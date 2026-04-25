@@ -1,4 +1,4 @@
-# 🧠 Telegram Semantic Memory Bot
+# 🧠 Telegram Semantic Memory Bot (NO AI)
 
 > **Store anything. Find it by meaning - not keywords.**  
 > A self-hosted Telegram bot powered by Gemini embeddings + Qdrant vector search, orchestrated with n8n.
