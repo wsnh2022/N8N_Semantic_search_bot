@@ -1,0 +1,483 @@
+{
+  "name": "Telegram Qdrant Semantic Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "96b96696-2f22-43ea-b02b-cf76dbbec574",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1168,
+        -256
+      ],
+      "webhookId": "22222222-2222-2222-2222-222222222222",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "33333333-3333-3333-3333-333333333333",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/store ",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "88c21606-1c7c-47f5-9182-364bcf5766ea",
+      "name": "Store or Search",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.item.json.message.text || '';\nconst text = msg.replace(/^\\/store\\s+/, '').trim();\nconst chat_id = $input.item.json.message.chat.id;\nif (!text) return [{ json: { error: true, chat_id, text: '' } }];\nreturn [{ json: { text, chat_id } }];"
+      },
+      "id": "f2ea1f22-17c1-4460-b8ea-8fcef560ee8d",
+      "name": "Extract Store Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=YOUR_GEMINI_API_KEY",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: { parts: [{ text: $json.text }] } }) }}",
+        "options": {}
+      },
+      "id": "738d1788-3bfb-4b6e-8003-344f0d6014e9",
+      "name": "Gemini Embed Store",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -288,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const vector = $input.item.json.embedding.values;\nconst prev = $('Extract Store Text').item.json;\nreturn [{ json: { vector, text: prev.text, chat_id: prev.chat_id, id: Date.now() } }];"
+      },
+      "id": "b77b9221-e3cc-4a2b-81ae-6db83dbd6e84",
+      "name": "Prepare Insert Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://YOUR_QDRANT_CLUSTER_HOST.eu-central-1-0.aws.cloud.qdrant.io:6333/collections/documents/points",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "YOUR_QDRANT_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ points: [{ id: $json.id, vector: $json.vector, payload: { text: $json.text, chat_id: $json.chat_id } }] }) }}",
+        "options": {}
+      },
+      "id": "212c3a3b-0b89-4cf7-ba8e-c13528bda8d5",
+      "name": "Qdrant Insert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        -352
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Store Text').item.json.chat_id }}",
+        "text": "Stored successfully.",
+        "additionalFields": {}
+      },
+      "id": "52c41598-e1a4-4c80-afda-89b18fb5e177",
+      "name": "Send Stored Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -352
+      ],
+      "webhookId": "143a89a0-c0db-4ef9-b690-b0255a13e384",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=YOUR_GEMINI_API_KEY",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: { parts: [{ text: $json.message.text }] } }) }}",
+        "options": {}
+      },
+      "id": "29551750-728c-4531-b9c9-94129838c925",
+      "name": "Gemini Embed Query",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const vector = $input.item.json.embedding.values;\nconst chat_id = $('Telegram Trigger').item.json.message.chat.id;\nreturn [{ json: { vector, chat_id } }];"
+      },
+      "id": "5938b104-b862-4ef6-b010-f1104f46d39b",
+      "name": "Prepare Search Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://YOUR_QDRANT_CLUSTER_HOST.eu-central-1-0.aws.cloud.qdrant.io:6333/collections/documents/points/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "YOUR_QDRANT_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ vector: $json.vector, limit: 3, with_payload: true, score_threshold: 0.5 }) }}",
+        "options": {}
+      },
+      "id": "9dfc3980-0cce-4c5c-b54d-5f836dcd9a55",
+      "name": "Qdrant Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.item.json.result;\nconst chat_id = $('Prepare Search Payload').item.json.chat_id;\n\nif (!results || results.length === 0) {\n  return [{ json: { reply: 'No matching results found.', chat_id } }];\n}\n\nconst top = results[0];\nconst score = (top.score * 100).toFixed(1);\nconst text = top.payload.text;\n\nreturn [{ json: { reply: 'Best match (' + score + '% similarity):\\n\\n' + text, chat_id } }];"
+      },
+      "id": "65cfed6d-a321-4197-8364-c8268c75ded1",
+      "name": "Extract Search Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {}
+      },
+      "id": "f916305f-dc6b-4eb4-a5ed-89563d7c3ebf",
+      "name": "Send Search Result",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -160
+      ],
+      "webhookId": "e7abf468-80fc-4350-b1e0-7dbc857c6bb0",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## SEMANTIC BOT RESPONSE:\n\n#### User:\n*/store* The Eiffel Tower is located in Paris France and was built in 1889\n\n#### n8nbot:\nStored successfully.\n\nThis message was sent automatically with n8n\n\n#### User:\n*/store* The Statue of Liberty is located in New York City, United States, and was inaugurated in the year 1886\n\n#### n8nbot:\nStored successfully.\n\nThis message was sent automatically with n8n\n\n#### User:\nWhere is the Statue of Liberty located?\n\n#### n8nbot:\nBest match (77.6% similarity):\n\nThe Statue of Liberty is located in New York City, United States, and was inaugurated in the year 1886\n\nThis message was sent automatically with n8n\n\n#### User:\nwhen the Eiffel Tower built ?\n\n#### n8nbot:\nBest match (79.8% similarity):\n\nThe Eiffel Tower is located in Paris France and was built in 1889\n\nThis message was sent automatically with n8n",
+        "height": 688,
+        "width": 768,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1200,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "066e1801-cfc7-4bd5-b501-ddbf55741ab2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7d036c39-1bb9-4345-a45b-8e1fcc1698e1",
+              "leftValue": "={{ $json.message.from.id }}",
+              "rightValue": "YOUR_TELEGRAM_USER_ID",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -960,
+        -256
+      ],
+      "id": "4fd793bc-f9f7-4b16-87ab-13710bd4adb7",
+      "name": "Authorize User Id"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "⚠️Your are not Authorized⚠️ ",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -752,
+        -144
+      ],
+      "id": "92dbada2-b19f-44df-ac94-67d052d73da9",
+      "name": "Un-Authorize User Response",
+      "webhookId": "172d3535-00b8-43c8-9c64-bddac8513c21",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## SEMANTIC BOT:\n\nThe bot returned the exact stored text that is most semantically similar to your query. 79.8% similarity for \"when was the Eiffel Tower built\" matching the Eiffel Tower entry is correct behavior.\nWhat you are seeing is the raw stored payload being returned as-is. The system has no summarization layer - it returns the full sentence it stored, not a generated answer.\nWhat you have built:\n\nSemantic search - not keyword search\nQuery meaning is matched against stored text meaning via vectors\nCorrect result is returned even when query wording differs from stored wording\n\nWhat it cannot do yet:\n\nExtract just the year from the sentence\nAnswer in natural language like \"The Eiffel Tower was built in 1889\"\nThat would require an LLM layer on top - which is the next step when you add AI back\n\nFor a zero-AI retrieval system this is the expected and correct output. The pipeline is working.\n\n",
+        "height": 272,
+        "width": 1360
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        -688
+      ],
+      "id": "1b7afba2-0cb7-474e-aaa1-34d0df6affc3",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Authorize User Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store or Search": {
+      "main": [
+        [
+          {
+            "node": "Extract Store Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gemini Embed Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Store Text": {
+      "main": [
+        [
+          {
+            "node": "Gemini Embed Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embed Store": {
+      "main": [
+        [
+          {
+            "node": "Prepare Insert Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Insert Payload": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Insert": {
+      "main": [
+        [
+          {
+            "node": "Send Stored Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Embed Query": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Search Payload": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Search": {
+      "main": [
+        [
+          {
+            "node": "Extract Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Search Result": {
+      "main": [
+        [
+          {
+            "node": "Send Search Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorize User Id": {
+      "main": [
+        [
+          {
+            "node": "Store or Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Un-Authorize User Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "45725609-f401-4953-a3ea-19125bcc3717",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "IJqZZ5r3TW0Qlt5c",
+  "tags": []
+}
